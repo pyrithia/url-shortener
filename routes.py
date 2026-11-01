@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from dependencies import SessionDep
 from models import Url
 from schemas import UrlCreate, UrlResponse
+from utils import code_generator
 
 router = APIRouter()
 
@@ -15,15 +17,27 @@ def root():
 
 @router.post("/urls", response_model=UrlResponse, status_code=status.HTTP_201_CREATED)
 def create_url(session: SessionDep, url_create: UrlCreate):
-    url = Url(
-        real_url=str(url_create.real_url),
-        expires_at=url_create.expires_at,
-        code="ak47m",
+    for _ in range(5):
+        url = Url(
+            real_url=str(url_create.real_url),
+            expires_at=url_create.expires_at,
+            code=code_generator(),
+        )
+        session.add(url)
+        try:
+            session.flush()
+        except IntegrityError:
+            session.rollback()
+            continue
+        else:
+            session.commit()
+            session.refresh(url)
+            return url
+
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="Unable to generate unique code. Try again",
     )
-    session.add(url)
-    session.commit()
-    session.refresh(url)
-    return url
 
 
 @router.get("/urls", response_model=list[UrlResponse])
