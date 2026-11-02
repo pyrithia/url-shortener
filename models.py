@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+import time
 
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -11,9 +11,9 @@ class Url(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     code: Mapped[str] = mapped_column(unique=True, index=True)
     real_url: Mapped[str]
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
-    expires_at: Mapped[datetime]
+    created_at: Mapped[int] = mapped_column(default=lambda: int(time.time()))
+    expires_at: Mapped[int]
 
     @property
     def is_expired(self) -> bool:
-        return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
+        return time.time() >= self.expires_at

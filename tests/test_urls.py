@@ -1,8 +1,11 @@
+import time
 from datetime import UTC, datetime, timedelta
 
 from fastapi import status
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
+from models import Url
 from tests.helpers import create_test_url
 
 
@@ -11,13 +14,35 @@ def test_create_url(client: TestClient):
         "/urls",
         json={
             "real_url": "https://example.com/test-page",
-            "expires_at": str(datetime.now(UTC) + timedelta(days=1)),
+            "expires_at": (datetime.now(UTC) + timedelta(days=1)).isoformat(),
         },
     )
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data["real_url"] == "https://example.com/test-page"
     assert data["code"]
+
+
+def test_create_url_past_expiry(client: TestClient):
+    response = client.post(
+        "/urls",
+        json={
+            "real_url": "https://example.com/test-page",
+            "expires_at": (datetime.now(UTC) - timedelta(minutes=1)).isoformat(),
+        },
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+def test_create_url_naive_expiry(client: TestClient):
+    response = client.post(
+        "/urls",
+        json={
+            "real_url": "https://example.com/test-page",
+            "expires_at": (datetime.now() + timedelta(days=1)).isoformat(),
+        },
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_read_urls(client: TestClient):
@@ -54,7 +79,7 @@ def test_create_url_collison(client: TestClient, monkeypatch):
         "/urls",
         json={
             "real_url": "https://example.com/test-page",
-            "expires_at": str(datetime.now(UTC) + timedelta(days=1)),
+            "expires_at": (datetime.now(UTC) + timedelta(days=1)).isoformat(),
         },
     )
     assert response.status_code == status.HTTP_201_CREATED
@@ -69,7 +94,7 @@ def test_create_url_max_collisions(client: TestClient, monkeypatch):
         "/urls",
         json={
             "real_url": "https://example.com/test-page",
-            "expires_at": str(datetime.now(UTC) + timedelta(days=1)),
+            "expires_at": (datetime.now(UTC) + timedelta(days=1)).isoformat(),
         },
     )
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
@@ -88,8 +113,14 @@ def test_redirect_url_invalid(client: TestClient):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_url_is_expired(client: TestClient):
-    test_url = create_test_url(
-        client, expires_at=str(datetime.now(UTC) - timedelta(minutes=1))
+def test_redirect_url_expired(client: TestClient, session: Session):
+    session.add(
+        Url(
+            real_url="https://example.com",
+            expires_at=int(time.time()) - 1,
+            code="abcde",
+        )
     )
-    assert test_url["is_expired"] == True
+    session.commit()
+    response = client.get("/abcde", follow_redirects=False)
+    assert response.status_code == status.HTTP_410_GONE

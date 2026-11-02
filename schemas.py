@@ -1,15 +1,20 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
-from pydantic import AnyUrl, BaseModel, ConfigDict
+from pydantic import AwareDatetime, BaseModel, ConfigDict, HttpUrl, field_validator
 
 
 class UrlBase(BaseModel):
-    real_url: AnyUrl
-    expires_at: datetime
+    real_url: HttpUrl
+    expires_at: AwareDatetime
 
 
 class UrlCreate(UrlBase):
-    pass
+    @field_validator("expires_at")
+    @classmethod
+    def validate_expiry(cls, value):
+        if value <= datetime.now(UTC):
+            raise ValueError("Expiry must be in the future")
+        return value
 
 
 class UrlResponse(UrlBase):

@@ -11,7 +11,3 @@ def code_generator(length: int = 5):
         result += charset[index]
 
     return result
-
-
-def get_code():
-    pass

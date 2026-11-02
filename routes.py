@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Path, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from starlette.responses import RedirectResponse
@@ -21,7 +23,7 @@ def create_url(session: SessionDep, url_create: UrlCreate):
     for _ in range(5):
         url = Url(
             real_url=str(url_create.real_url),
-            expires_at=url_create.expires_at,
+            expires_at=int(url_create.expires_at.timestamp()),
             code=code_generator(),
         )
         session.add(url)
@@ -48,7 +50,7 @@ def read_urls(session: SessionDep):
 
 
 @router.get("/urls/{url_id}", response_model=UrlResponse)
-def read_url(session: SessionDep, url_id: int):
+def read_url(session: SessionDep, url_id: Annotated[int, Path(ge=1)]):
     url = session.get(Url, url_id)
 
     if url is None:
@@ -60,7 +62,7 @@ def read_url(session: SessionDep, url_id: int):
 
 
 @router.delete("/urls/{url_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_url(session: SessionDep, url_id: int):
+def delete_url(session: SessionDep, url_id: Annotated[int, Path(ge=1)]):
     url = session.get(Url, url_id)
 
     if url is None:

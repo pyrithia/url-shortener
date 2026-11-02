@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 def create_test_url(
     client: TestClient,
     real_url: str = "https://example.com/test-page",
-    expires_at: str = str(datetime.now(UTC) + timedelta(days=1)),
+    expires_at: str = (datetime.now(UTC) + timedelta(days=1)).isoformat(),
 ):
     response = client.post(
         "/urls",
