@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from starlette.responses import RedirectResponse
 
 from dependencies import SessionDep
 from models import Url
@@ -69,3 +70,16 @@ def delete_url(session: SessionDep, url_id: int):
 
     session.delete(url)
     session.commit()
+
+
+@router.get("/{code}", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+def redirect_url(code: str, session: SessionDep):
+    statement = select(Url).where(Url.code == code)
+    url = session.scalar(statement)
+
+    if url is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="URL not found"
+        )
+
+    return RedirectResponse(url.real_url)

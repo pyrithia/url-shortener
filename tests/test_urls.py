@@ -45,8 +45,8 @@ def test_delete_url(client: TestClient):
 
 
 def test_create_url_collison(client: TestClient, monkeypatch):
-    existing_url = create_test_url(client)
-    codes = iter([existing_url["code"], "x7k9p"])
+    test_url = create_test_url(client)
+    codes = iter([test_url["code"], "x7k9p"])
     monkeypatch.setattr("routes.code_generator", lambda: next(codes))
     response = client.post(
         "/urls",
@@ -61,8 +61,8 @@ def test_create_url_collison(client: TestClient, monkeypatch):
 
 
 def test_create_url_max_collisions(client: TestClient, monkeypatch):
-    existing_url = create_test_url(client)
-    monkeypatch.setattr("routes.code_generator", lambda: existing_url["code"])
+    test_url = create_test_url(client)
+    monkeypatch.setattr("routes.code_generator", lambda: test_url["code"])
     response = client.post(
         "/urls",
         json={
@@ -71,3 +71,16 @@ def test_create_url_max_collisions(client: TestClient, monkeypatch):
         },
     )
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+
+
+def test_redirect_url(client: TestClient):
+    test_url = create_test_url(client, real_url="https://example.com/test-page")
+    code = test_url["code"]
+    response = client.get(f"/{code}", follow_redirects=False)
+    assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
+    assert response.headers["location"] == test_url["real_url"]
+
+
+def test_redirect_url_invalid(client: TestClient):
+    response = client.get("/invalid", follow_redirects=False)
+    assert response.status_code == status.HTTP_404_NOT_FOUND
