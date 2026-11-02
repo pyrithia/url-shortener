@@ -1,0 +1,28 @@
+A URL shortener API using FastAPI.
+
+RUN:
+
+1. Clone repository:
+    git clone https://github.com/pyrithia/url-shortener
+2. Navigate to project:
+    cd url-shortener
+3. Install dependencies:
+    uv sync
+4. Set database URL:
+    echo "DATABASE_URL=sqlite:///urls.db" > .env
+5. Apply migrations:
+    uv run alembic upgrade head
+6. Start server:
+    uv run fastapi dev
+
+ENDPOINTS:
+
+POST /urls Create a new shortened URL.
+
+GET /urls Retrieve all URLs.
+
+GET /urls/{id} Retrieve a URL by ID.
+
+DELETE /urls/{id} Delete a URL by ID.
+
+GET /{code} Redirect to the original URL.
