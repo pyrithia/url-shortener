@@ -5,14 +5,14 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, HttpUrl, field_valida
 
 class UrlBase(BaseModel):
     real_url: HttpUrl
-    expires_at: AwareDatetime
+    expires_at: AwareDatetime | None = None
 
 
 class UrlCreate(UrlBase):
     @field_validator("expires_at")
     @classmethod
     def validate_expiry(cls, value):
-        if value <= datetime.now(UTC):
+        if value is not None and value <= datetime.now(UTC):
             raise ValueError("Expiry must be in the future")
         return value
 

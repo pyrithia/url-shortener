@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Path, status
@@ -20,10 +21,12 @@ def root():
 
 @router.post("/urls", response_model=UrlResponse, status_code=status.HTTP_201_CREATED)
 def create_url(session: SessionDep, url_create: UrlCreate):
+    expires_at = url_create.expires_at or datetime.now(UTC) + timedelta(days=1)
+
     for _ in range(5):
         url = Url(
             real_url=str(url_create.real_url),
-            expires_at=int(url_create.expires_at.timestamp()),
+            expires_at=int(expires_at.timestamp()),
             code=code_generator(),
         )
         session.add(url)

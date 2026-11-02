@@ -23,6 +23,20 @@ def test_create_url(client: TestClient):
     assert data["code"]
 
 
+def test_create_url_default_expiry(client: TestClient):
+    response = client.post(
+        "/urls",
+        json={
+            "real_url": "https://example.com/test-page",
+        },
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+    assert data["real_url"] == "https://example.com/test-page"
+    assert data["expires_at"]
+    assert data["code"]
+
+
 def test_create_url_past_expiry(client: TestClient):
     response = client.post(
         "/urls",
