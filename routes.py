@@ -82,4 +82,7 @@ def redirect_url(code: str, session: SessionDep):
             status_code=status.HTTP_404_NOT_FOUND, detail="URL not found"
         )
 
+    if url.is_expired:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="URL has expired")
+
     return RedirectResponse(url.real_url)

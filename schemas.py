@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import AnyUrl, BaseModel, ConfigDict
 
 
 class UrlBase(BaseModel):
@@ -16,3 +16,6 @@ class UrlResponse(UrlBase):
     id: int
     created_at: datetime
     code: str
+    is_expired: bool
+
+    model_config = ConfigDict(from_attributes=True)

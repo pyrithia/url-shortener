@@ -13,3 +13,7 @@ class Url(Base):
     real_url: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     expires_at: Mapped[datetime]
+
+    @property
+    def is_expired(self) -> bool:
+        return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)

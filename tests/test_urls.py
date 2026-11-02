@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import status
 from fastapi.testclient import TestClient
 
@@ -9,7 +11,7 @@ def test_create_url(client: TestClient):
         "/urls",
         json={
             "real_url": "https://example.com/test-page",
-            "expires_at": "2099-12-31T23:59:59",
+            "expires_at": str(datetime.now(UTC) + timedelta(days=1)),
         },
     )
     assert response.status_code == status.HTTP_201_CREATED
@@ -52,7 +54,7 @@ def test_create_url_collison(client: TestClient, monkeypatch):
         "/urls",
         json={
             "real_url": "https://example.com/test-page",
-            "expires_at": "2099-12-31T23:59:59",
+            "expires_at": str(datetime.now(UTC) + timedelta(days=1)),
         },
     )
     assert response.status_code == status.HTTP_201_CREATED
@@ -67,7 +69,7 @@ def test_create_url_max_collisions(client: TestClient, monkeypatch):
         "/urls",
         json={
             "real_url": "https://example.com/test-page",
-            "expires_at": "2099-12-31T23:59:59",
+            "expires_at": str(datetime.now(UTC) + timedelta(days=1)),
         },
     )
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
@@ -84,3 +86,10 @@ def test_redirect_url(client: TestClient):
 def test_redirect_url_invalid(client: TestClient):
     response = client.get("/invalid", follow_redirects=False)
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_url_is_expired(client: TestClient):
+    test_url = create_test_url(
+        client, expires_at=str(datetime.now(UTC) - timedelta(minutes=1))
+    )
+    assert test_url["is_expired"] == True

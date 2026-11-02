@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import status
 from fastapi.testclient import TestClient
 
@@ -5,7 +7,7 @@ from fastapi.testclient import TestClient
 def create_test_url(
     client: TestClient,
     real_url: str = "https://example.com/test-page",
-    expires_at: str = "2099-12-31T23:59:59",
+    expires_at: str = str(datetime.now(UTC) + timedelta(days=1)),
 ):
     response = client.post(
         "/urls",
